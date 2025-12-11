@@ -1,3 +1,45 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+:root {
+   --background: #ffffff;
+   --foreground: #171717;
+   --primary: #7000ff;
+}
+
+@theme inline {
+   --color-background: var(--background);
+   --color-foreground: var(--foreground);
+   --color-primary: var(--primary);
+   --font-sans: var(--font-geist-sans);
+   --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+   :root {
+      --background: #0a0a0a;
+      --foreground: #ededed;
+      --primary: #7000ff;
+   }
+}
+
+@layer utilities {
+   body,
+   html {
+      @apply bg-radial-[at_75%_50%] from-neutral-700 to-gray-900 to-100% h-screen overflow-hidden;
+   }
+
+   .animate-appear {
+      animation: appear 0.5s ease-out forwards;
+   }
+
+   @keyframes appear {
+      from {
+         opacity: 0;
+         transform: translateY(10px);
+      }
+      to {
+         opacity: 1;
+         transform: translateY(0);
+      }
+   }
+}
