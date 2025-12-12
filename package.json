@@ -22,13 +22,14 @@
       "contentful-import": "^9.0.4",
       "date-fns": "2.30.0",
       "framer-motion": "^12.23.25",
+      "jotai": "^2.16.0",
       "leva": "^0.10.1",
       "next": "latest",
       "postcss": "8.4.31",
       "react": "^18.2.0",
       "react-dom": "^18.2.0",
       "tailwind-merge": "^3.4.0",
-      "three": "^0.153.0",
+      "three": "^0.182.0",
       "three-stdlib": "^2.36.0",
       "wawa-lipsync": "^0.0.2",
       "zod": "^4.1.13"
@@ -38,7 +39,7 @@
       "@types/node": "^20.5.0",
       "@types/react": "^18.2.20",
       "@types/react-dom": "^18.2.7",
-      "@types/three": "^0.153.0",
+      "@types/three": "^0.182.0",
       "tailwindcss": "^4",
       "typescript": "^5.1.6"
    }

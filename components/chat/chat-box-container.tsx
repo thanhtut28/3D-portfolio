@@ -1,19 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ChatBox } from "./chat-box";
 import { chat } from "@/actions/chat";
-import { readStreamableValue } from "@ai-sdk/rsc";
-import { projectDataSchema } from "../conversation/types";
+import { useEffect, useRef, useState } from "react";
 import { Lipsync } from "wawa-lipsync";
-
-interface ChatBoxContainerProps {
-   setTalking: (talking: boolean) => void;
-}
+import { ChatBox } from "./chat-box";
+import { useSetAtom } from "jotai";
+import { talkAtom } from "@/atoms/talk-atom";
 
 export const lipsyncManager = typeof window !== "undefined" ? new Lipsync() : null;
 
-export function ChatBoxContainer({ setTalking }: ChatBoxContainerProps) {
+export function ChatBoxContainer() {
+   const setTalking = useSetAtom(talkAtom);
    const [isLoading, setIsLoading] = useState(false);
    const [message, setMessage] = useState("");
    const [response, setResponse] = useState("");
@@ -59,7 +56,10 @@ export function ChatBoxContainer({ setTalking }: ChatBoxContainerProps) {
          audioRef.current.src = audioUrl;
          lipsyncManager!.connectAudio(audioRef.current);
          audioRef.current.play();
-         audioRef.current.onended = () => URL.revokeObjectURL(audioUrl);
+         audioRef.current.onended = () => {
+            setTalking(false);
+            URL.revokeObjectURL(audioUrl);
+         };
 
          setResponse(JSON.stringify(chatResponse));
          console.log("chatResponse", chatResponse);
@@ -68,7 +68,6 @@ export function ChatBoxContainer({ setTalking }: ChatBoxContainerProps) {
       } finally {
          setIsLoading(false);
          setAbtController(null);
-         setTalking(false);
       }
    };
 

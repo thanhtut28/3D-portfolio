@@ -6,15 +6,19 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { ConversationBubble } from "../conversation/conversation-bubble";
 import { MeAvatar } from "./me-avatar";
+import { talkAtom } from "@/atoms/talk-atom";
+import { useAtomValue } from "jotai";
 
 export const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
-export const Experience = ({ talking }: { talking: boolean }) => {
+export const Experience = () => {
+   const talking = useAtomValue(talkAtom);
    const { camera } = useThree();
    const progressRef = useRef(0);
    const initializedRef = useRef(false);
    const pedestalRef = useRef<THREE.Group>(null);
    const [cameraSettled, setCameraSettled] = useState<boolean>(false);
+   const isCameraSettledRef = useRef(false);
    const {
       bg,
       fogColor,
@@ -43,8 +47,8 @@ export const Experience = ({ talking }: { talking: boolean }) => {
       }),
       Camera: folder({
          camInitPos: { value: [0, 8, 10], step: 0.1 },
-         camTargetPos: { value: [0, 3, 4.5], step: 0.1 },
-         camLookAt: { value: [0, 2.1, 0.5], step: 0.1 },
+         camTargetPos: { value: [0, 2.8, 4.5], step: 0.1 },
+         camLookAt: { value: [0, 2, 0.5], step: 0.1 },
          animSpeed: { value: 0.3, min: 0.05, max: 2 },
       }),
       Lighting: folder({
@@ -61,18 +65,25 @@ export const Experience = ({ talking }: { talking: boolean }) => {
       }),
    });
 
-   // Convert arrays to Vectors for animation logic
-   const initialPosVec = new THREE.Vector3(...(camInitPos as [number, number, number]));
-   const targetPosVec = new THREE.Vector3(...(camTargetPos as [number, number, number]));
-   const lookAtVec = new THREE.Vector3(...(camLookAt as [number, number, number]));
+   // Use refs to avoid creating new Vector3 objects on every render
+   const initialPosVec = useRef(new THREE.Vector3());
+   const targetPosVec = useRef(new THREE.Vector3());
+   const lookAtVec = useRef(new THREE.Vector3());
+
+   // Update vector refs when controls change
+   useEffect(() => {
+      initialPosVec.current.set(...(camInitPos as [number, number, number]));
+      targetPosVec.current.set(...(camTargetPos as [number, number, number]));
+      lookAtVec.current.set(...(camLookAt as [number, number, number]));
+   }, [camInitPos, camTargetPos, camLookAt]);
 
    useEffect(() => {
       if (!("isPerspectiveCamera" in camera)) return;
-      const cam = camera as THREE.PerspectiveCamera;
+      const cam = camera as unknown as THREE.PerspectiveCamera;
 
-      cam.position.copy(initialPosVec);
+      cam.position.copy(initialPosVec.current);
       cam.fov = 30;
-      cam.lookAt(lookAtVec);
+      cam.lookAt(lookAtVec.current);
       cam.updateProjectionMatrix();
       initializedRef.current = true;
    }, [camera]); // Initial setup only
@@ -80,38 +91,39 @@ export const Experience = ({ talking }: { talking: boolean }) => {
    useFrame((_, delta) => {
       if (!initializedRef.current) return;
       if (!("isPerspectiveCamera" in camera)) return;
-      const cam = camera as THREE.PerspectiveCamera;
+      const cam = camera as unknown as THREE.PerspectiveCamera;
 
       progressRef.current = Math.min(progressRef.current + delta * animSpeed, 1);
       const t = easeOutCubic(progressRef.current);
 
-      cam.position.lerpVectors(initialPosVec, targetPosVec, t);
-      cam.lookAt(lookAtVec);
+      cam.position.lerpVectors(initialPosVec.current, targetPosVec.current, t);
+      cam.lookAt(lookAtVec.current);
       cam.updateProjectionMatrix();
 
-      if (camera.position.distanceTo(targetPosVec) < 0.1) {
+      if (camera.position.distanceTo(targetPosVec.current) < 0.1 && !isCameraSettledRef.current) {
+         isCameraSettledRef.current = true;
          setCameraSettled(true);
       }
    });
 
    useFrame(({ clock }) => {
       if (cameraSettled) {
-         const cam = camera as THREE.PerspectiveCamera;
+         const cam = camera as unknown as THREE.PerspectiveCamera;
 
          // Gentle breathing motion relative to the target settled position
          const time = clock.getElapsedTime();
 
          // Smooth side-to-side sway
-         const swayX = Math.sin(time * 0.5) * 0.08; // Slow sway
+         const swayX = Math.sin(time * 0.5) * 0.04; // Slow sway
          // Subtle up-down breathing
-         const breatheY = Math.cos(time * 0.3) * 0.09;
+         const breatheY = Math.cos(time * 0.3) * 0.05;
 
          // Apply offsets to the target position
-         cam.position.x = targetPosVec.x + swayX;
-         cam.position.y = targetPosVec.y + breatheY;
+         cam.position.x = targetPosVec.current.x + swayX;
+         cam.position.y = targetPosVec.current.y + breatheY;
 
          // Keep looking at the target point
-         cam.lookAt(lookAtVec);
+         cam.lookAt(lookAtVec.current);
          cam.updateProjectionMatrix();
       }
    });

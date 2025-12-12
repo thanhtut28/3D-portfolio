@@ -2,6 +2,7 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import { EXAMPLE_PATH, CMS_NAME } from "@/lib/constants";
 import { Controls } from "@/components/controls";
+import { Provider } from "jotai";
 
 export const metadata = {
    title: `Next.js and ${CMS_NAME} Example`,
@@ -46,8 +47,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
    return (
       <html lang="en" className={inter.variable}>
          <body>
-            {children}
-            <Controls />
+            <Provider>
+               {children}
+               <Controls />
+            </Provider>
          </body>
       </html>
    );

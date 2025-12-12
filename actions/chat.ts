@@ -5,10 +5,10 @@ import { getProfile } from "@/lib/api";
 import { openai } from "@ai-sdk/openai";
 import { experimental_generateSpeech as generateSpeech, generateObject } from "ai";
 import { elevenlabs } from "@ai-sdk/elevenlabs";
+import { TEST_AUDIO } from "@/lib/test-audio";
 
 export async function chat(question: string) {
    const profile = await getProfile();
-   console.log("profile", JSON.stringify(profile));
 
    const { object } = await generateObject({
       model: openai("gpt-4o"),
@@ -16,7 +16,7 @@ export async function chat(question: string) {
       temperature: 0.7,
       prompt: `You are a friendly 3D avatar representing a developer's portfolio named ${
          profile.profile.name
-      } And you are ${
+      }, just tell only first name. And you are ${
          profile.profile.personality
       }. Always present yourself as the developer himself, not a virtual assistant.
 
@@ -39,11 +39,12 @@ export async function chat(question: string) {
    If the user's question is none of the above, use the following default format: { text: string }
    
    VOICE OUTPUT:
-   - The voice output should be a string that the avatar will speak.
-   - The voice output should be concise and natural.
-   - The voice output should be 1-2 sentences max.
-   - The voice output should be in the same language as the user's message.
-   - The voice output should be related to the user's intent and emote the avatar should show.
+   - This will be the voice output of the avatar, that will be used to generate the audio by using elevenlabs, so the output should be with the appropriate format for elevenlabs, inlcuding natural tone and emotion.
+   - Should be a string that the avatar will speak.
+   - Should be concise and natural.
+   - Should be 1-2 sentences max.
+   - Should be in the same language as the user's message.
+   - Should be related to the user's intent and emote the avatar should show.
    - The response should be natural and conversational, and have emotional expression based on the user's intent and topic.
    - The output must be related with the user's question, just like a real conversation.
    - You can be as a friend as possible, but don't be too friendly or too casual. Can show your emotional expression based on the user's intent and topic.
@@ -77,13 +78,10 @@ export async function chat(question: string) {
    const { audio } = await generateSpeech({
       model: elevenlabs.speech("eleven_multilingual_v2"),
       text: object.voiceOutput,
-      voice: "69Na567Zr0bPvmBYuGdc",
+      voice: "x8xv0H8Ako6Iw3cKXLoC",
       outputFormat: "mp3",
-      headers: {
-         "xi-api-key": process.env.ELEVENLABS_API_KEY!,
-      },
    });
 
    // Return raw base64 so the client can construct a playable Blob URL.
-   return { chatResponse: messageSchema.parse(object), audioBase64: audio.base64 };
+   return { chatResponse: messageSchema.parse(object), audioBase64: TEST_AUDIO };
 }
