@@ -23,19 +23,32 @@ export const experienceDataSchema = z.object({
 
 export const messageSchema = z.object({
    id: z.string(),
-   type: z.enum(["text", "project"]),
+   type: z
+      .enum(["text", "project", "experience", "education"])
+      .describe(
+         "The type of the message, should be either 'text' or 'project' or 'experience' or 'education'."
+      ),
    content: z
       .json()
       .describe(
          "The content of the message, should be a normalConversationSchema object, ProjectData object, or ExperienceData object."
       ),
-   timestamp: z.number(),
-   voiceOutput: z.string(),
-   emote: z
-      .enum(["happy", "sad", "angry", "surprised", "confused"])
-      .describe("The emote of the avatar"),
 });
 
+export const chatResponseSchema = z
+   .object({
+      messages: z.array(messageSchema),
+      voiceOutput: z.string(),
+      timestamp: z.number(),
+      emote: z
+         .enum(["happy", "sad", "angry", "surprised", "confused"])
+         .describe("The emote of the avatar"),
+   })
+   .describe(
+      `The response of the chat, should be a ChatResponse object, with the following format: { messages: [MessageSchema]: ${messageSchema.description}, voiceOutput: string }.`
+   );
+
+export type ChatResponse = z.infer<typeof chatResponseSchema>;
 export type Message = z.infer<typeof messageSchema>;
-export type ProjectData = z.infer<typeof projectDataSchema>;
-export type ExperienceData = z.infer<typeof experienceDataSchema>;
+export type Project = z.infer<typeof projectDataSchema>;
+export type Experience = z.infer<typeof experienceDataSchema>;

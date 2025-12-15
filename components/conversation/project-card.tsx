@@ -1,15 +1,15 @@
 import React from "react";
-import { ProjectData } from "./types";
+import { Project } from "./types";
 
 interface ProjectCardProps {
-   data: ProjectData;
+   data: Project;
    onClick?: () => void;
 }
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ data, onClick }) => {
    return (
       <div
-         className="bg-white/5 backdrop-blur-md rounded-xl overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer group w-full hover:shadow-[0_0_20px_rgba(112,0,255,0.3)]"
+         className="bg-transparent overflow-hidden transition-all duration-300 cursor-pointer group w-full"
          onClick={() => {
             if (onClick) onClick();
             window.open(data.link, "_blank");
@@ -28,10 +28,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ data, onClick }) => {
          )}
 
          <div className="py-3 px-6">
-            <h3 className="text-white font-bold text-xl mb-2 group-hover:text-purple-300 transition-colors">
+            <h3 className="text-white font-bold text-lg mb-2 group-hover:text-purple-300 transition-colors">
                {data.title}
             </h3>
-            <p className="text-gray-300 text-base mb-4 line-clamp-2">{data.description}</p>
+            <p className="text-gray-300 text-sm mb-4 line-clamp-2">{data.description}</p>
 
             {data.tags && (
                <div className="flex flex-wrap gap-2">

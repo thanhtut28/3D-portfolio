@@ -1,5 +1,7 @@
+import { isCameraSettledAtom } from "@/atoms";
 import { cn } from "@/utils/cn";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAtomValue } from "jotai";
 import { useState } from "react";
 
 interface ChatBoxProps {
@@ -11,6 +13,7 @@ interface ChatBoxProps {
 
 export function ChatBox({ isLoading, handleSubmit, message, setMessage }: ChatBoxProps) {
    const [isFocused, setIsFocused] = useState(false);
+   const isCameraSettled = useAtomValue(isCameraSettledAtom);
 
    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter") {
@@ -65,8 +68,9 @@ export function ChatBox({ isLoading, handleSubmit, message, setMessage }: ChatBo
                      <input
                         type="text"
                         placeholder="Ask me anything..."
-                        className="w-[400px] bg-transparent text-white placeholder-white/40 px-3 py-2 text-base focus:outline-none focus:ring-0 font-light tracking-wide"
+                        className="w-[400px] bg-transparent text-white placeholder-white/40 px-3 py-2 text-base focus:outline-none focus:ring-0 font-light tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
                         onFocus={() => setIsFocused(true)}
+                        disabled={!isCameraSettled}
                         onBlur={() => setIsFocused(false)}
                         value={message}
                         onChange={e => setMessage(e.target.value)}

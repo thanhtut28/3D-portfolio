@@ -1,81 +1,107 @@
-import React, { useState, useEffect } from "react";
-import { Float, Html } from "@react-three/drei";
-import { Message, ProjectData } from "./types";
-import { TextMessage } from "./text-message";
+import { Html } from "@react-three/drei";
+import { AnimatePresence, motion, Transition } from "framer-motion";
+import React, { useEffect, useState } from "react";
+import { useAtomValue, useSetAtom } from "jotai";
+import {
+   messagesAtom,
+   thinkingAtom,
+   currentMessageAtom,
+   hasMultipleMessagesAtom,
+   canGoPrevAtom,
+   canGoNextAtom,
+   goToPrevMessageAtom,
+   goToNextMessageAtom,
+   messageIndexAtom,
+} from "@/atoms";
+import { NextMessageButton } from "./next-message-button";
+import { PrevMessageButton } from "./prev-message-button";
 import { ProjectCard } from "./project-card";
-import { AnimatePresence, motion } from "framer-motion";
+import { ExperienceCard } from "./experience-card";
+import { TextMessage } from "./text-message";
+import { Project, Experience } from "./types";
 
 interface ConversationBubbleProps {
    position?: [number, number, number];
    visible?: boolean;
 }
 
-const MOCK_MESSAGES: Message[] = [
-   {
-      id: "1",
-      type: "text",
-      content: {
-         text: "Hi there! I'm your virtual assistant. Check out some of my recent work below. You can ask me about my projects, experience, or education.",
-      },
-      timestamp: Date.now(),
-      voiceOutput:
-         "Hi there! I'm your virtual assistant. Check out some of my recent work below. You can ask me about my projects, experience, or education.",
-      emote: "happy",
-   },
+const springTransition: Transition = {
+   type: "spring",
+   stiffness: 400,
+   damping: 30,
+};
 
-   {
-      id: "2",
-      type: "project",
-      content: {
-         title: "Neon City Explorer",
-         description:
-            "A 3D interactive experience exploring a futuristic cyberpunk city built with Three.js and React.",
-         link: "https://example.com/neon-city",
-         tags: ["React", "Three.js", "WebGL"],
-         image: "https://shorthand.com/the-craft/raster-images/assets/5kVrMqC0wp/sh-unsplash_5qt09yibrok-4096x2731.jpeg",
-      } as ProjectData,
-      timestamp: Date.now() + 1000,
-      voiceOutput:
-         "Here is a project I worked on called Neon City Explorer. It is a 3D interactive experience exploring a futuristic cyberpunk city built with Three.js and React.",
-      emote: "happy",
-   },
-];
+const ThinkingIndicator: React.FC = () => (
+   <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="px-6 py-4 bg-white/10 backdrop-blur-xl rounded-2xl text-lg text-white/80 border border-white/10 w-fit flex items-center gap-2 mt-2"
+   >
+      <span className="text-purple-300">●</span>
+      <span className="text-purple-300 animate-bounce delay-100">●</span>
+      <span className="text-purple-300 animate-bounce delay-200">●</span>
+   </motion.div>
+);
+
+const MessageContent: React.FC<{
+   message: { type: string; content: unknown };
+   hasSingleMessage: boolean;
+}> = ({ message, hasSingleMessage }) => {
+   const content = message.content;
+
+   return (
+      <div
+         className={`w-full bg-white/10 backdrop-blur-md border-x border-white/10 ${
+            hasSingleMessage ? "rounded-3xl" : ""
+         }`}
+      >
+         {message.type === "text" && <TextMessage text={(content as { text: string }).text} />}
+         {message.type === "project" && <ProjectCard data={content as Project} />}
+         {message.type === "experience" && <ExperienceCard data={content as Experience} />}
+      </div>
+   );
+};
 
 export const ConversationBubble: React.FC<ConversationBubbleProps> = ({
    position = [1.5, 1.5, 0],
    visible = true,
 }) => {
    const [isOpen, setIsOpen] = useState(true);
-   const [displayIndex, setDisplayIndex] = useState(-1);
 
-   const currentMessage = MOCK_MESSAGES[displayIndex] ?? null;
-   console.log("displayIndex", displayIndex);
+   // Use derived atoms for cleaner state access
+   const messages = useAtomValue(messagesAtom);
+   const thinking = useAtomValue(thinkingAtom);
+   const currentMessage = useAtomValue(currentMessageAtom);
+   const hasMultipleMessages = useAtomValue(hasMultipleMessagesAtom);
+   const canGoPrev = useAtomValue(canGoPrevAtom);
+   const canGoNext = useAtomValue(canGoNextAtom);
+   const messageIndex = useAtomValue(messageIndexAtom);
+
+   const goToPrev = useSetAtom(goToPrevMessageAtom);
+   const goToNext = useSetAtom(goToNextMessageAtom);
+
+   const setMessageIndex = useSetAtom(messageIndexAtom);
 
    useEffect(() => {
-      let timer: NodeJS.Timeout;
-      if (visible) {
-         timer = setInterval(() => {
-            setDisplayIndex(prev => {
-               if (prev < MOCK_MESSAGES.length - 1) {
-                  return prev + 1;
-               }
-               clearInterval(timer);
-               return prev;
-            });
-         }, 2000);
+      if (thinking) {
+         setMessageIndex(0);
       }
+   }, [thinking, setMessageIndex]);
 
-      return () => {
-         clearTimeout(timer);
-         setDisplayIndex(-1);
-      };
+   useEffect(() => {
+      if (visible) {
+         setIsOpen(true);
+      }
    }, [visible]);
 
    if (!visible) return null;
 
+   const showPagination = messageIndex !== -1 && hasMultipleMessages;
+
    return (
       <Html position={position} transform distanceFactor={4}>
-         <div className="w-[400px] flex flex-col items-start gap-4 p-6 pointer-events-none text-2xl">
+         <div className="w-[400px] flex flex-col items-center gap-4 p-6 pointer-events-none text-2xl">
             <AnimatePresence>
                {isOpen && (
                   <motion.div
@@ -83,38 +109,48 @@ export const ConversationBubble: React.FC<ConversationBubbleProps> = ({
                      animate={{ opacity: 1, scale: 1, y: 0 }}
                      exit={{ opacity: 0, scale: 0.8, y: 20 }}
                      transition={{ duration: 0.3 }}
-                     className="flex flex-col gap-3 w-full pointer-events-auto origin-bottom-left"
+                     className="flex flex-col items-center gap-0 w-full pointer-events-auto origin-bottom-left"
                   >
+                     {showPagination && (
+                        <motion.div
+                           initial={{ opacity: 0, scale: 0.98 }}
+                           animate={{ opacity: 1, scale: 1 }}
+                           exit={{ opacity: 0, scale: 0.98 }}
+                           transition={springTransition}
+                           className="w-full flex justify-center"
+                        >
+                           <PrevMessageButton onClick={goToPrev} disabled={!canGoPrev} />
+                        </motion.div>
+                     )}
+
                      <AnimatePresence mode="popLayout">
                         {currentMessage && (
                            <motion.div
-                              initial={{ opacity: 0, x: -20, scale: 0.95 }}
-                              animate={{ opacity: 1, x: 0, scale: 1 }}
-                              transition={{ type: "spring", stiffness: 300, damping: 24 }}
-                              layout
+                              key={currentMessage.id}
+                              initial={{ opacity: 0, scale: 0.98 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.98 }}
+                              transition={springTransition}
+                              className="w-full"
                            >
-                              {currentMessage.type === "text" && (
-                                 <TextMessage
-                                    text={(currentMessage.content as { text: string }).text}
-                                 />
-                              )}
-
-                              {currentMessage.type === "project" && (
-                                 <ProjectCard data={currentMessage.content as ProjectData} />
-                              )}
+                              <MessageContent
+                                 message={currentMessage}
+                                 hasSingleMessage={messages.length === 1}
+                              />
                            </motion.div>
                         )}
+                        {thinking && <ThinkingIndicator />}
                      </AnimatePresence>
-                     {displayIndex === -1 && (
+
+                     {showPagination && (
                         <motion.div
-                           initial={{ opacity: 0 }}
-                           animate={{ opacity: 1 }}
-                           exit={{ opacity: 0 }}
-                           className="px-6 py-4 bg-white/10 backdrop-blur-xl rounded-2xl text-lg text-white/80 border border-white/10 w-fit flex items-center gap-2 mt-2"
+                           initial={{ opacity: 0, scale: 0.98 }}
+                           animate={{ opacity: 1, scale: 1 }}
+                           exit={{ opacity: 0, scale: 0.98 }}
+                           transition={springTransition}
+                           className="w-full flex justify-center"
                         >
-                           <span className="text-purple-300">●</span>
-                           <span className="text-purple-300 animate-bounce delay-100">●</span>
-                           <span className="text-purple-300 animate-bounce delay-200">●</span>
+                           <NextMessageButton onClick={goToNext} disabled={!canGoNext} />
                         </motion.div>
                      )}
                   </motion.div>

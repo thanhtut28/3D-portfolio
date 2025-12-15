@@ -1,8 +1,9 @@
 "use client";
-import { Suspense, useEffect, useRef, useState } from "react";
-import { Experience } from "./experience";
-import { Camera, Canvas } from "@react-three/fiber";
+import { Stats } from "@react-three/drei";
+import { Canvas } from "@react-three/fiber";
+import { Suspense } from "react";
 import { ChatBoxContainer } from "../chat/chat-box-container";
+import { Experience } from "./experience";
 
 export const CanvasContainer = () => {
    return (
@@ -13,6 +14,7 @@ export const CanvasContainer = () => {
             <Suspense>
                <Experience />
             </Suspense>
+            <Stats />
          </Canvas>
          <ChatBoxContainer />
       </>

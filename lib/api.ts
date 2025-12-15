@@ -1,5 +1,5 @@
 import { Avatar } from "@/types";
-
+import type { Project, Experience } from "@/components/conversation/types";
 const POST_GRAPHQL_FIELDS = `
   slug
   title
@@ -60,8 +60,16 @@ function extractPostEntries(fetchResponse: any): any[] {
 function extractProfile(fetchResponse: any): Avatar {
    return {
       profile: fetchResponse?.data?.avatarCollection?.items?.[0]?.profile,
-      experience: fetchResponse?.data?.avatarCollection?.items?.[0]?.experienceCollection?.items,
+      // experience: fetchResponse?.data?.avatarCollection?.items?.[0]?.experienceCollection?.items,
    };
+}
+
+function extractExperience(fetchResponse: any): Experience[] {
+   return fetchResponse?.data?.avatarCollection?.items?.[0]?.experienceCollection?.items;
+}
+
+function extractProject(fetchResponse: any): Project[] {
+   return fetchResponse?.data?.avatarCollection?.items?.[0]?.projectCollection?.items;
 }
 
 export async function getPreviewPostBySlug(slug: string | null): Promise<any> {
@@ -105,19 +113,53 @@ export async function getProfile() {
         bio
         personality
       }
-      experienceCollection {
-        items {
-          company
-          role
-          period
-          jobDescription
-        }
-      }
+      
     }
   }
 }`
    );
    return extractProfile(entry);
+}
+
+export async function getExperience() {
+   const entry = await fetchGraphQL(
+      `query {
+      avatarCollection {
+        items {
+          experienceCollection {
+            items {
+              company
+              role
+              period
+              jobDescription
+            }
+          }
+        }
+      }
+    }`
+   );
+   return extractExperience(entry);
+}
+
+export async function getProject() {
+   const entry = await fetchGraphQL(
+      `query {
+      avatarCollection {
+        items {
+          projectCollection {
+            items {
+              title
+              description
+              link
+              tags
+              image: image1
+            }
+          }
+        }
+      }
+    }`
+   );
+   return extractProject(entry);
 }
 
 export async function getPostAndMorePosts(slug: string, preview: boolean): Promise<any> {

@@ -1,6 +1,6 @@
 export interface Avatar {
    profile: Profile;
-   experience: Experience[];
+   // experience: Experience[];
 }
 
 export interface Profile {

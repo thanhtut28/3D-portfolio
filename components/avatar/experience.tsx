@@ -5,19 +5,19 @@ import { folder, useControls } from "leva";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { ConversationBubble } from "../conversation/conversation-bubble";
-import { MeAvatar } from "./me-avatar";
-import { talkAtom } from "@/atoms/talk-atom";
-import { useAtomValue } from "jotai";
+import { Avatar } from "./avatar";
+import { isCameraSettledAtom, talkingAtom } from "@/atoms";
+import { useAtom, useAtomValue } from "jotai";
 
 export const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
 export const Experience = () => {
-   const talking = useAtomValue(talkAtom);
+   const talking = useAtomValue(talkingAtom);
    const { camera } = useThree();
    const progressRef = useRef(0);
    const initializedRef = useRef(false);
    const pedestalRef = useRef<THREE.Group>(null);
-   const [cameraSettled, setCameraSettled] = useState<boolean>(false);
+   const [cameraSettled, setCameraSettled] = useAtom(isCameraSettledAtom);
    const isCameraSettledRef = useRef(false);
    const {
       bg,
@@ -48,7 +48,7 @@ export const Experience = () => {
       Camera: folder({
          camInitPos: { value: [0, 8, 10], step: 0.1 },
          camTargetPos: { value: [0, 2.8, 4.5], step: 0.1 },
-         camLookAt: { value: [0, 2, 0.5], step: 0.1 },
+         camLookAt: { value: [0, 2.1, 0.5], step: 0.1 },
          animSpeed: { value: 0.3, min: 0.05, max: 2 },
       }),
       Lighting: folder({
@@ -134,7 +134,7 @@ export const Experience = () => {
          <fog attach="fog" args={[fogColor, fogNear, fogFar]} />
 
          <group position={[0, 0.5, 0.2]}>
-            <MeAvatar cameraSettled={cameraSettled} talking={talking} position={[-0.8, 0, -1]} />
+            <Avatar cameraSettled={cameraSettled} talking={talking} position={[-0.8, 0, -1]} />
             <ConversationBubble visible={cameraSettled} position={[1, 1.3, -5.5]} />
          </group>
 
